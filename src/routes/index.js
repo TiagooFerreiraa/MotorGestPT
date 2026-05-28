@@ -13,7 +13,15 @@ function checkAuth(req, res, next) {
 }
 
 router.get("/", checkAuth,(req, res) => {
-    res.render("home");
+    const user = req.session.user;
+
+    if (!user) {
+        return res.redirect("/login");
+    }
+
+    res.render("home", {
+        user
+    });
 });
 
 // LOGIN
@@ -39,7 +47,7 @@ router.post("/login", async (req, res) => {
     if (match) {
         req.session.user = {
             id: user.ID,
-            nome: user.Username,
+            username: user.Username,
             email: user.Email
         }
         res.redirect("/");
