@@ -5,22 +5,26 @@ const bcrypt = require('bcrypt');
 const db = require('../db/connection');
 
 function checkAuth(req, res, next) {
-    if (req.session.user) {
+    if (req.session.utilizador) {
         next();
     } else {
         res.redirect("/login");
     }
 }
 
-router.get("/", checkAuth,(req, res) => {
-    const user = req.session.user;
+router.get("/", checkAuth, async (req, res) => {
+    const utilizador = req.session.utilizador;
+    const [cars] = await db.query("SELECT COUNT(*) AS total FROM cars");
 
-    if (!user) {
+    const totalCars = cars[0].total;
+
+    if (!utilizador) {
         return res.redirect("/login");
     }
 
     res.render("home", {
-        user
+        utilizador,
+        totalCars
     });
 });
 
@@ -29,33 +33,33 @@ router.get("/login", (req, res) => {
     res.render("login");
 });
 router.post("/login", async (req, res) => {
-    const { email, password } = req.body;
+    const { Email, Palavra_Passe } = req.body;
 
-    const [rows] = await db.query("SELECT * FROM users WHERE Email = ?", [email]);
+    const [rows] = await db.query("SELECT * FROM users WHERE Email = ?", [Email]);
 
     if (rows.length === 0) {
-        return res.send("Invalid characters");
+        return res.send("Utilizador não existe!");
     }
 
-    const user = rows[0];
+    const utilizador = rows[0];
 
     console.log(req.body);
-    console.log(user);
+    console.log(utilizador);
 
-    const match = await bcrypt.compare(password, user.Password);
+    const match = await bcrypt.compare(Palavra_Passe, utilizador.Palavra_Passe);
 
     if (match) {
-        req.session.user = {
-            id: user.ID,
-            username: user.Username,
-            email: user.Email
+        req.session.utilizador = {
+            id: utilizador.ID,
+            nome_utilizador: utilizador.Nome_Utilizador,
+            email: utilizador.Email
         }
         res.redirect("/");
     } else {
-        res.send("Invalid credentials");
+        res.send("Credenciais Inválidas");
     }
 
-    res.send("Login recieved");
+    res.send("Login recebido");
     
 });
 
